@@ -69,31 +69,14 @@
         404：服务器无法根据客户端请求定向资源。
         500：服务器内部报障。
         501：服务器不支持该请求功能，无法完成请求操作（post/get/……）。
-
 */
 
-/* 运行注意事项。
- * 要为Linux进行编译，请执行以下操作：
+/* 要为Linux进行编译，请执行以下操作：
  * 1）注释掉 #include <pthread.h> 行；
  * 2）注释掉定义变量 newthread 的行；
  * 3）注释掉运行 pthread_create() 的两行；
  * 4）取消注释运行 accept_request() 的行；
  * 5）从 MakeFike 中删除-lsocket;
- */
-
-/* 每个函数的作用：
- * accept_request:  处理从套接字上监听到的一个 HTTP 请求，在这里可以很大一部分地体现服务器处理请求流程。
- * bad_request: 返回给客户端这是个错误请求，HTTP 状态吗 400 BAD REQUEST.
- * cat: 读取服务器上某个文件写到 socket 套接字。
- * cannot_execute: 主要处理发生在执行 cgi 程序时出现的错误。
- * error_die: 把错误信息写到 perror 并退出。
- * execute_cgi: 运行 cgi 程序的处理，也是个主要函数。
- * get_line: 读取套接字的一行，把回车换行等情况都统一为换行符结束。
- * headers: 把 HTTP 响应的头部写到套接字。
- * not_found: 主要处理找不到请求的文件时的情况。
- * sever_file: 调用 cat 把服务器文件返回给浏览器。
- * startup: 初始化 httpd 服务，包括建立套接字，绑定端口，进行监听等。
- * unimplemented: 返回给浏览器表明收到的 HTTP 请求所用的 method 不被支持。
  */
 
 #include <stdio.h>
@@ -116,19 +99,18 @@
 // 默认服务器字符串提示
 #define SERVER_STRING "Server: jdbhttpd/0.1.0\r\n"
 
-void bad_request(int);    // 400错误处理函数-服务器无法解析
-void cannot_execute(int); // 500错误处理函数-无法执行请求
-void not_found(int);      // 404错误处理函数-请求的内容不存在
-void unimplemented(int);  // 501仅实现了get、post方法，其他方法错误处理函数
-
-void error_die(const char *);    // 错误处理函数处理
-void headers(int, const char *); // 服务器成功响应返回200
-int startup(unsigned short *);   // 初始化服务器
-void *accept_request(int);    // 处理链接、子线程
-void execute_cgi(int, const char *, const char *, const char *);
-int get_line(int, char *, int);     // 从缓冲区读取一行
-void serve_file(int, const char *); // 处理文件请求
-void cat(int, FILE *);              // 处理文件，读取文件内容发送到客户端
+int startup(unsigned short *); // 初始化服务器，包括建立套接字，绑定端口，进行监听等。
+void *accept_request(int); // 处理从套接字上监听到的一个 HTTP 请求，包含服务器处理请求基本流程。
+void execute_cgi(int, const char *, const char *, const char *); //用于执行CGI脚本程序。
+void serve_file(int, const char *); // 处理相关服务器文件（调用cat函数等）并返回给浏览器。
+int get_line(int, char *, int); // 读取套接字的一行。
+void cat(int, FILE *); // 处理服务器文件，读取文件内容写入到套接字发送到客户端。
+void headers(int, const char *); // 把HTTP响应头部写入套接字，服务器成功响应返回200
+void bad_request(int); // 400错误处理函数-服务器无法解析
+void not_found(int); // 404错误处理函数-请求的内容不存在
+void cannot_execute(int); // 500错误处理函数-无法执行请求（如CGI程序）
+void unimplemented(int); // 501（仅实现了get、post方法）错误处理函数-请求方法错误
+void error_die(const char *); // 错误处理函数处理
 
 // **********************************************************************
 
@@ -169,7 +151,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-/// @brief 启动监听web连接程序函数
+/// @brief 启动监听web连接程序函数，包括建立套接字，绑定端口，进行监听等。
 /// @param port 可用连接端口的指针，若端口为0则自动指定可用端口
 /// @return the socket socket描述符
 int startup(unsigned short *port)
@@ -232,7 +214,7 @@ int startup(unsigned short *port)
     return (httpd);
 }
 
-/// @brief 接受服务器端口请求
+/// @brief 接受服务器端口请求根据需求进行处理。
 /// @param arg 链接到客户端的套接字
 /// @return 适当地处理请求
 void *accept_request(int arg)
@@ -379,7 +361,7 @@ void *accept_request(int arg)
     return NULL;
 }
 
-/// @brief 执行CGI脚本。需要根据需求设置环境变量
+/// @brief 执行CGI脚本，需要根据需求设置环境变量。
 /// @param client 套接字描述符
 /// @param path 请求的CGI文件路径
 /// @param method 请求的方法
@@ -528,7 +510,7 @@ void execute_cgi(int client,
     }
 }
 
-/// @brief 发送规则文件给客户端。包括用户头文件和报告
+/// @brief 处理相关服务器文件（调用cat函数等）并返回给浏览器，包括用户头文件和报告。
 /// @param client socket描述符
 /// @param filename 请求的文件名称（路径
 void serve_file(int client, const char *filename)
@@ -569,66 +551,6 @@ void serve_file(int client, const char *filename)
     // 关闭文件资源
     fclose(resource);
 }
-
-/// @brief 返回给客户端这是个错误请求，HTTP 状态码 400。
-/// @param client
-void bad_request(int client)
-{
-    char buf[1024];
-
-    sprintf(buf, "HTTP/1.0 400 BAD REQUEST\r\n");
-    send(client, buf, sizeof(buf), 0);
-    sprintf(buf, "Content-type: text/html\r\n");
-    send(client, buf, sizeof(buf), 0);
-    sprintf(buf, "\r\n");
-    send(client, buf, sizeof(buf), 0);
-    sprintf(buf, "<P>Your browser sent a bad request, ");
-    send(client, buf, sizeof(buf), 0);
-    sprintf(buf, "such as a POST without a Content-Length.\r\n");
-    send(client, buf, sizeof(buf), 0);
-}
-
-/// @brief 把一个文件的全部内容放在一个套接字，
-/// @param client socket描述符
-/// @param resource 文件名（文件指针）
-void cat(int client, FILE *resource)
-{
-    char buf[1024];                    // 缓冲池
-    fgets(buf, sizeof(buf), resource); // 从文件描述符中逐行读取，遇到换行符/eof/error停止
-
-    while (!feof(resource)) // 判断是否读取到文件结尾
-    {
-        // 将读取内容发送到客户端
-        send(client, buf, strlen(buf), 0);
-        // 读取下一行
-        fgets(buf, sizeof(buf), resource);
-    }
-}
-
-/// @brief 无法执行函数，主要处理发生在执行 cgi 程序时出现的错误。
-/// @param client
-void cannot_execute(int client)
-{
-    char buf[1024];
-
-    sprintf(buf, "HTTP/1.0 500 Internal Server Error\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "Content-type: text/html\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "<P>Error prohibited CGI execution.\r\n");
-    send(client, buf, strlen(buf), 0);
-}
-
-/// @brief 把错误信息写到 perror 并退出。
-/// @param sc
-void error_die(const char *sc)
-{
-    perror(sc);
-    exit(1);
-}
-
 /// @brief 读取套接字的一行，把回车换行等情况都统一为换行符结束。
 /// @param sock sock套接字
 /// @param buf 字符缓冲池
@@ -667,7 +589,24 @@ int get_line(int sock, char *buf, int size)
     return (i);
 }
 
-/// @brief 根据文件返回HTTP头文件信息
+/// @brief 把一个文件的全部内容放在一个套接字。
+/// @param client socket描述符
+/// @param resource 文件名（文件指针）
+void cat(int client, FILE *resource)
+{
+    char buf[1024];                    // 缓冲池
+    fgets(buf, sizeof(buf), resource); // 从文件描述符中逐行读取，遇到换行符/eof/error停止
+
+    while (!feof(resource)) // 判断是否读取到文件结尾
+    {
+        // 将读取内容发送到客户端
+        send(client, buf, strlen(buf), 0);
+        // 读取下一行
+        fgets(buf, sizeof(buf), resource);
+    }
+}
+
+/// @brief 把HTTP响应头部写入套接字并发送，表示服务器成功响应返回200。
 /// @param client socket描述符
 /// @param filename 文件指针
 void headers(int client, const char *filename)
@@ -690,7 +629,25 @@ void headers(int client, const char *filename)
     send(client, buf, strlen(buf), 0);
 }
 
-/// @brief 处理404错误信息
+/// @brief 处理400错误，错误请求。
+/// @param client
+void bad_request(int client)
+{
+    char buf[1024];
+
+    sprintf(buf, "HTTP/1.0 400 BAD REQUEST\r\n");
+    send(client, buf, sizeof(buf), 0);
+    sprintf(buf, "Content-type: text/html\r\n");
+    send(client, buf, sizeof(buf), 0);
+    sprintf(buf, "\r\n");
+    send(client, buf, sizeof(buf), 0);
+    sprintf(buf, "<P>Your browser sent a bad request, ");
+    send(client, buf, sizeof(buf), 0);
+    sprintf(buf, "such as a POST without a Content-Length.\r\n");
+    send(client, buf, sizeof(buf), 0);
+}
+
+/// @brief 处理404错误，无法获取请求内容。
 /// @param client
 void not_found(int client)
 {
@@ -716,7 +673,23 @@ void not_found(int client)
     send(client, buf, strlen(buf), 0);
 }
 
-/// @brief 处理501错误。返回浏览器表明请求资源未找到或请求方法不支持，
+/// @brief 处理500错误，无法执行函数，主要处理发生在执行 cgi 程序时出现的错误。
+/// @param client
+void cannot_execute(int client)
+{
+    char buf[1024];
+
+    sprintf(buf, "HTTP/1.0 500 Internal Server Error\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "Content-type: text/html\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "\r\n");
+    send(client, buf, strlen(buf), 0);
+    sprintf(buf, "<P>Error prohibited CGI execution.\r\n");
+    send(client, buf, strlen(buf), 0);
+}
+
+/// @brief 处理501错误，返回浏览器表明请求资源未找到或请求方法不支持。
 /// @param client
 void unimplemented(int client)
 {
@@ -738,4 +711,12 @@ void unimplemented(int client)
     send(client, buf, strlen(buf), 0);
     sprintf(buf, "</BODY></HTML>\r\n");
     send(client, buf, strlen(buf), 0);
+}
+
+/// @brief 处理其他错误，并把错误信息写到 perror 并退出。
+/// @param sc
+void error_die(const char *sc)
+{
+    perror(sc);
+    exit(1);
 }
