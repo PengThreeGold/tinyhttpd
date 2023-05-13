@@ -24,6 +24,10 @@
 + error_die() 用于将错误信息流推送到perror并退出服务
 ## 运行界面
 + 主页
+
 ![index](https://github.com/PengThreeGold/tinyhttpd/blob/master/index.png)
+
 + CGI页面
+
 ![cgi](https://github.com/PengThreeGold/tinyhttpd/blob/master/cgi.png)
+
