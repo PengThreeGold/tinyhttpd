@@ -23,4 +23,4 @@
 + unimplemented() 用于501错误请求处理，无法正常请求资源或请求方法不支持
 + error_die() 用于将错误信息流推送到perror并退出服务
 ## 运行主界面
-[](https://github.com/PengThreeGold/tinyhttpd/blob/master/index.png)
+![index](https://github.com/PengThreeGold/tinyhttpd/blob/master/index.png)
