@@ -5,10 +5,10 @@
 + httpd.c 主程序文件
 + httpd.out 主程序编译后文件
 + htdocs CGI脚本程序相关文件
- + color.cpp CGI脚本程序文件
- + color.cgi CGI脚本程序编译后文件
- + example_cgi.html CGI脚本程序页面效果示例文件
- + index.html 服务器启动主页文件
+  + color.cpp CGI脚本程序文件
+  + color.cgi CGI脚本程序编译后文件
+  + example_cgi.html CGI脚本程序页面效果示例文件
+  + index.html 服务器启动主页文件
 ## 主要函数说明（color.c文件）
 + startup() 用于启动监听web连接程序函数
 + accept_request() 用于接收服务器端口的HTTP请求并进行相关处理跳转
