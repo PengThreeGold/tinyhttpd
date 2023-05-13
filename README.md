@@ -22,3 +22,5 @@
 + cannot_execute() 用于500错误异常处理，无法正常执行资源（如求情CGI脚本程序）
 + unimplemented() 用于501错误请求处理，无法正常请求资源或请求方法不支持
 + error_die() 用于将错误信息流推送到perror并退出服务
+## 运行主界面
+[](https://github.com/PengThreeGold/tinyhttpd/blob/master/index.png)
