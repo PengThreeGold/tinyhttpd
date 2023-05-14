@@ -75,8 +75,6 @@
  * 1）注释掉 #include <pthread.h> 行；
  * 2）注释掉定义变量 newthread 的行；
  * 3）注释掉运行 pthread_create() 的两行；
- * 4）取消注释运行 accept_request() 的行；
- * 5）从 MakeFike 中删除-lsocket;
  */
 
 #include <stdio.h>
